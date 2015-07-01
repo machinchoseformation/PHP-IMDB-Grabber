@@ -1,7 +1,7 @@
 <?php
 
-	$numberOfBestOfPagesByMoviemeter = 0;
-	$numberOfBestOfPagesByNumVotes = 7;
+	$numberOfBestOfPagesByMoviemeter = 5;
+	$numberOfBestOfPagesByNumVotes = 25;
 	$minimumRating = 6.4;
 	
 	require("imdb.class.php");
@@ -69,7 +69,16 @@
 		if ($grabber->isReady) {
 			$movieRawData = $grabber->getAll();
 			$movieRawData['Id'] = $movieInfo['id'];
+			
+			//nothing found ??
+			if ($movieRawData['Title']['value'] == "n/A"){
+				print_r($movieRawData);
+				print_r($movieInfo);
+				die("oops");
+			}
+
 			echo str_pad(' ', 2000) . '<br /><b>' . $movieRawData['Title']['value'] . "</b><br />";
+
 	        if ($movieRawData['Rating']['value'] >= $minimumRating){
 	        	addMovie($movieRawData);
 	        }
