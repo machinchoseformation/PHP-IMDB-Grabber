@@ -1,21 +1,26 @@
 <?php
+
+	$numberOfBestOfPages = 1;
 	
 	require("imdb.class.php");
 
 	$listGrabber = new IMDBListGrabber();
-	$moviesList = $listGrabber->fetch(3);
-	echo '<pre>';
+	$moviesList = $listGrabber->fetch($numberOfBestOfPages);
+	/*echo '<pre>';
 	print_r($moviesList);
-	echo '</pre>';
+	echo '</pre>';*/
 
-	/*
-	$grabber = new IMDB('http://www.imdb.com/title/tt0118799/?ref_=nv_sr_1');
-	if ($grabber->isReady) {
-		echo '<pre>';
-        print_r($grabber->getAll());
-        echo '</pre>';
-    }
-    else {
-        echo 'Movie was not found';
-    }
-	*/
+	foreach($moviesList as $movieInfo){
+
+		ini_set("max_execution_time", 30);
+
+		$grabber = new IMDB('http://akas.imdb.com/title/'.$movieInfo['id'].'/');
+		if ($grabber->isReady) {
+			echo '<pre>';
+	        print_r($grabber->getAll());
+	        echo '</pre>';
+	    }
+	    else {
+	        echo 'Movie was not found';
+	    }
+	}
