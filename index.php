@@ -1,56 +1,35 @@
 <?php
 
-	$numberOfBestOfPages = 1;
+	$numberOfBestOfPages = 5;
 	$minimumRating = 7;
 	
 	require("imdb.class.php");
 	require("db.php");
+	require("install_tables.php");
 
-	function installTables()
-	{
-
-		global $dbh;
-
-		$sql = "
-			CREATE TABLE IF NOT EXISTS movies (
-			  id int(11) NOT NULL,
-			  imdb_id varchar(20) NOT NULL,
-			  title varchar(255) NOT NULL,
-			  year int(4) NOT NULL,
-			  cast text NOT NULL,
-			  directors text NOT NULL,
-			  writers text NOT NULL,
-			  genres varchar(255) NOT NULL,
-			  plot text NOT NULL,
-			  rating float(2,1) NOT NULL,
-			  votes int(11) NOT NULL,
-			  runtime varchar(25) NOT NULL,
-			  trailer_url text NOT NULL,
-			  date_created datetime NOT NULL,
-			  date_modified datetime NOT NULL
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-			
-			ALTER TABLE movies
-		  		ADD PRIMARY KEY (id);
-			ALTER TABLE movies
-			  	MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-		";
-
-		$sth = $dbh->prepare($sql);
-		$sth->execute();	
-
-	}
-
+	installTables();
 
 	$insertSql = "INSERT INTO movies 
 				(id, imdb_id, title, year, cast, directors, writers, genres, plot, rating, votes, runtime, trailer_url, date_created, date_modified) 
 				VALUES (NULL, :imdb_id, :title, :year, :cast, :directors, :writers, :genres, :plot, :rating, :votes, :runtime, :trailer_url, NOW(), NOW())";
 	$insertSth = $dbh->prepare($insertSql);
 
+	$existsSql = "SELECT id FROM movies 
+					WHERE imdb_id = :imdb_id LIMIT 1";
+	$existsSth = $dbh->prepare($existsSql);
+
 
 	function addMovie(array $movieRawData)
 	{
-		global $insertSth;
+		global $insertSth, $existsSth;
+
+		$existsSth->execute(array(":imdb_id" => $movieRawData['Id']));
+		$exists = $existsSth->fetchColumn();
+
+		if ($exists){
+			echo "exists<br />";
+			return false;
+		}
 
 		$params = array(
 			':imdb_id' 		=> $movieRawData['Id'], 
@@ -67,18 +46,16 @@
 			':trailer_url' 	=> $movieRawData['TrailerLinked']['value']
 		);
 
-		$insertSth->execute($params);
+		if ($insertSth->execute($params)){
+			echo "inserted<br />";
+			return true;
+		}
 
+		return false;
 	}
-
-
-	installTables();
 
 	$listGrabber = new IMDBListGrabber();
 	$moviesList = $listGrabber->fetch($numberOfBestOfPages);
-	/*echo '<pre>';
-	print_r($moviesList);
-	echo '</pre>';*/
 
 	foreach($moviesList as $movieInfo){
 
@@ -88,11 +65,12 @@
 		if ($grabber->isReady) {
 			$movieRawData = $grabber->getAll();
 			$movieRawData['Id'] = $movieInfo['id'];
-			echo '<pre>';
-	        print_r($movieRawData);
-	        echo '</pre>';
-	        if ($movieRawData['Rating']['value'] > $minimumRating){
+			echo str_pad(' ', 2000) . '<br /><b>' . $movieRawData['Title']['value'] . "</b><br />";
+	        if ($movieRawData['Rating']['value'] >= $minimumRating){
 	        	addMovie($movieRawData);
+	        }
+	        else {
+	        	echo "rating too low (".$movieRawData['Rating']['value'].")<br />";
 	        }
 	    }
 	    else {
