@@ -1504,6 +1504,9 @@ class IMDBException extends Exception {
 class IMDBListGrabber 
 {
 
+    private $iCache = 1440;
+
+
     private $baseUrl = "http://akas.imdb.com/search/title?at=0&sort=moviemeter,asc&start={{offset}}&title_type=feature";
     private $perPage = 50;
     private $offset = 0;
@@ -1528,9 +1531,25 @@ class IMDBListGrabber
 
     private function getPage($url)
     {
-        $res = IMDBHelper::runCurl($url);
-        //print_r($res);
-        $links = IMDBHelper::matchRegex($res['contents'], self::IMDB_LINK);
+        $contents = null;
+        //in cache (see above, copy paste)
+        $sCacheFile = 'cache/' . md5($url) . '.cache';
+        if (is_readable($sCacheFile)) {
+            $iDiff = round(abs(time() - filemtime($sCacheFile)) / 60);
+            if ($iDiff < $this->iCache) {
+                $contents = file_get_contents($sCacheFile);
+            }
+        }
+
+        if (!$contents){
+            $res = IMDBHelper::runCurl($url);
+            $contents = $res['contents'];
+            // Save cache.
+            file_put_contents($sCacheFile, $contents);
+
+        }
+
+        $links = IMDBHelper::matchRegex($contents, self::IMDB_LINK);
         $count = count($links['id']);
         for($i=0;$i<$count;$i++)
         {
