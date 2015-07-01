@@ -1507,21 +1507,27 @@ class IMDBListGrabber
     private $iCache = 1440;
 
 
-    private $baseUrl = "http://akas.imdb.com/search/title?at=0&sort=moviemeter,asc&start={{offset}}&title_type=feature";
+    private $baseUrl = "http://akas.imdb.com/search/title?at=0&sort={{sort}},asc&start={{offset}}&title_type=feature";
     private $perPage = 50;
     private $offset = 0;
+    private $sort = "moviemeter";
     private $numberOfPages = 3;
     private $result = [];
 
     const IMDB_LINK        = '~<a href="\/title\/(?P<id>tt\d{6,})\/"(?:\s*)>(?P<title>.*)<\/a>~Ui';
 
-    public function fetch($numberOfPages = 3)
+    public function fetch($numberOfPages = 3, $sort = "moviemeter")
     {
+        if ($numberOfPages == 0){
+            return array();
+        }
+
         $this->numberOfPages = $numberOfPages;
 
         for($i=1;$i<=$this->numberOfPages;$i++)
         {
             $url = str_replace("{{offset}}", $this->offset, $this->baseUrl);
+            $url = str_replace("{{sort}}", $this->sort, $url);
             $res = $this->getPage($url);
             $this->offset += $this->perPage;
         }

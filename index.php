@@ -1,7 +1,8 @@
 <?php
 
-	$numberOfBestOfPages = 5;
-	$minimumRating = 7;
+	$numberOfBestOfPagesByMoviemeter = 0;
+	$numberOfBestOfPagesByNumVotes = 7;
+	$minimumRating = 6.4;
 	
 	require("imdb.class.php");
 	require("db.php");
@@ -55,7 +56,10 @@
 	}
 
 	$listGrabber = new IMDBListGrabber();
-	$moviesList = $listGrabber->fetch($numberOfBestOfPages);
+	$moviesList1 = $listGrabber->fetch($numberOfBestOfPagesByNumVotes, "num_votes");
+	$moviesList2 = $listGrabber->fetch($numberOfBestOfPagesByMoviemeter, "moviemeter");
+
+	$moviesList = array_merge($moviesList2, $moviesList1);
 
 	foreach($moviesList as $movieInfo){
 
