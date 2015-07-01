@@ -1268,7 +1268,7 @@ class IMDB {
         );
         $aData['Title']                  = array(
             'name'  => 'Title',
-            'value' => $this->getTitle()
+            'value' => $this->getTitle(true)
         );
         $aData['TrailerLinked']          = array(
             'name'  => 'Trailer',
@@ -1500,3 +1500,50 @@ class IMDBHelper extends IMDB {
 
 class IMDBException extends Exception {
 }
+
+class IMDBListGrabber 
+{
+
+    private $baseUrl = "http://akas.imdb.com/search/title?at=0&sort=moviemeter,asc&start={{offset}}&title_type=feature";
+    private $perPage = 50;
+    private $offset = 0;
+    private $numberOfPages = 3;
+    private $result = [];
+
+    const IMDB_LINK        = '~<a href="\/title\/(?P<id>tt\d{6,})\/"(?:\s*)>(?P<title>.*)<\/a>~Ui';
+
+    public function fetch($numberOfPages = 3)
+    {
+        $this->numberOfPages = $numberOfPages;
+
+        for($i=1;$i<=$this->numberOfPages;$i++)
+        {
+            $url = str_replace("{{offset}}", $this->offset, $this->baseUrl);
+            $res = $this->getPage($url);
+            $this->offset += $this->perPage;
+        }
+
+        return $this->result;
+    }
+
+    private function getPage($url)
+    {
+        $res = IMDBHelper::runCurl($url);
+        //print_r($res);
+        $links = IMDBHelper::matchRegex($res['contents'], self::IMDB_LINK);
+        $count = count($links['id']);
+        for($i=0;$i<$count;$i++)
+        {
+            $this->result[] = array(
+                "id" => $links['id'][$i], 
+                "title" => $links['title'][$i]
+            );
+        }
+    }
+
+
+}
+
+
+
+
